@@ -16,10 +16,10 @@ const SplashScreen = () => {
             firebaseAuth.onAuthStateChanged(async (userCred) => {
                 try {
                     if (userCred?.uid) {
-                        // const docSnap = await getDoc(doc(firestoreDB, "user", userCred.uid));
-                        // if (docSnap.exists()) {
-                        //     dispatch(setUser(docSnap.data()));
-                        // }
+                        const docSnap = await getDoc(doc(firestoreDB, "users", userCred.uid));
+                        if (docSnap.exists()) {
+                            dispatch(setUser(docSnap.data()));
+                        }
                         setTimeout(() => {
                             navigation.replace("HomeScreen");
                         }, 2000);

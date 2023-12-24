@@ -1,7 +1,7 @@
 import React from 'react'
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { HomeScreen, LoginScreen, RegisterScreen, WelcomeScreen, ContributionScreen, ProfileScreen, SplashScreen } from './screens';
+import { HomeScreen, LoginScreen, RegisterScreen, WelcomeScreen, ContributionScreen, ProfileScreen, SplashScreen, StoryViewScreen, NotificationScreen } from './screens';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import Icon from 'react-native-vector-icons/Ionicons'
 import { Provider } from 'react-redux';
@@ -21,8 +21,12 @@ const MyTab = () => {
           iconName = focused
             ? 'home'
             : 'home-outline';
-        } else if (route.name === 'Contribution') {
+        }
+        else if (route.name === 'Contribution') {
           iconName = focused ? 'add-circle' : 'add-circle-outline';
+        }
+        else if (route.name == 'Notification') {
+          iconName = focused ? 'notifications' : 'notifications-outline';
         }
         else if (route.name === 'Profile') {
           iconName = focused ? 'person' : 'person-outline';
@@ -37,6 +41,7 @@ const MyTab = () => {
     })}>
       <Tab.Screen name='Home' component={HomeScreen} />
       <Tab.Screen name='Contribution' component={ContributionScreen} />
+      <Tab.Screen name='Notification' component={NotificationScreen} />
       <Tab.Screen name='Profile' component={ProfileScreen} />
     </Tab.Navigator >
   );
@@ -51,6 +56,7 @@ const App = () => {
           <Stack.Screen name="WelcomeScreen" component={WelcomeScreen} />
           <Stack.Screen name="LoginScreen" component={LoginScreen} />
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
+          <Stack.Screen name="StoryViewScreen" component={StoryViewScreen} />
           <Stack.Screen name="HomeScreen" component={MyTab} />
         </Stack.Navigator>
       </Provider>

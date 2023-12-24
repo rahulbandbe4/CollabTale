@@ -10,9 +10,20 @@ import FastImage from 'react-native-fast-image'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { firebaseAuth, firestoreDB } from '../config/firebase.config'
 import { doc, setDoc } from 'firebase/firestore'
+import { useSelector } from 'react-redux'
 
 const RegisterScreen = () => {
+    // hooks
     const navigation = useNavigation();
+
+    // usestates
+    const [userFullName, setuserFullName] = useState();
+    const [userEmail, setuserEmail] = useState('');
+    const [userPass, setuserPass] = useState('');
+    const [isSelectAvatar, setIsSelectAvatar] = useState(false);
+    const [userAvatars, setuserAvatars] = useState(avatars[0]?.image.asset.url);
+
+    // user defined functions
     const handleSignUp = async () => {
         if (userEmail !== "") {
             await createUserWithEmailAndPassword(firebaseAuth, userEmail, userPass).then((userCred) => {
@@ -30,11 +41,6 @@ const RegisterScreen = () => {
         }
     }
 
-    const [userFullName, setuserFullName] = useState();
-    const [userEmail, setuserEmail] = useState('');
-    const [userPass, setuserPass] = useState('');
-    const [isSelectAvatar, setIsSelectAvatar] = useState(false);
-    const [userAvatars, setuserAvatars] = useState(avatars[0]?.image.asset.url);
     return (
         <View style={styles.container}>
             {/* Header logo and slogan with avatar */}

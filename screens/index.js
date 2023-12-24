@@ -5,3 +5,5 @@ export { default as RegisterScreen } from "./RegisterScreen";
 export { default as HomeScreen } from "./HomeScreen";
 export { default as ContributionScreen } from "./ContributionScreen";
 export { default as ProfileScreen } from "./ProfileScreen";
+export { default as StoryViewScreen } from "./StoryViewScreen";
+export { default as NotificationScreen } from "./NotificationScreen";
