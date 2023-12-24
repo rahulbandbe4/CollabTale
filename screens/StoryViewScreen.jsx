@@ -43,15 +43,18 @@ const StoryViewScreen = ({ route }) => {
     // user defined functions
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const handleContribution = async () => {
-        const docref = doc(firestoreDB, 'published-stories', originalContent.id);
-        const subCollection = collection(docref, "contributed-stories");
-        const contributedData = {
+        //take reference to the individual user document
+        const docref = doc(firestoreDB, 'published-stories', originalContent.id); 
+        const subCollection = collection(docref, "contributed-stories");    
+        //contributed data to be uploaded as a new story or newer version
+        const contributedData = {       
             userID: user._id,
             userName: user.fullName,
             title: originalContent.title,
             content: modifiedContent.content,
             isApproved: false,
         }
+        //adding the contributed document in the specified story
         await addDoc(subCollection, contributedData);
         navigation.navigate('HomeScreen');
     }
