@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions, ActivityIndicator } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import { cycle, logo } from '../assets'
 import { useNavigation } from '@react-navigation/native'
@@ -16,10 +16,11 @@ const HomeScreen = () => {
     const [activeButton, setActiveButton] = useState('recent');
     const [data, setData] = useState('');
     const [lastDoc, setLastDoc] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         const storiesCollection = collection(firestoreDB, 'published-stories');
-        const queryRef = query(storiesCollection, limit(10));
+        const queryRef = query(storiesCollection, limit(3));
 
         const unsubscribe = onSnapshot(queryRef, (snapshot) => {
             const storiesData = snapshot.docs.map((doc) => ({
@@ -38,24 +39,39 @@ const HomeScreen = () => {
     }, []);
 
     // user defined functions
-    const storyfetchdata = async (startAfterDoc) => {
+    const storyFetchData = async (startAfterDoc) => {
+        if (loading) {
+            // Avoid fetching data if a fetch operation is already in progress
+            return;
+        }
+
+        setLoading(true);
 
         const storiesCollection = collection(firestoreDB, 'published-stories');
 
         const queryRef = startAfterDoc
-            ? query(storiesCollection, startAfter(startAfterDoc), limit(10))
-            : query(storiesCollection, limit(10));
+            ? query(storiesCollection, startAfter(startAfterDoc), limit(3))
+            : query(storiesCollection, limit(3));
 
-        const storiesSnapshot = await getDocs(queryRef);
+        try {
+            const storiesSnapshot = await getDocs(queryRef);
 
-        const storiesData = [];
-        storiesSnapshot.forEach((doc) => {
-            storiesData.push({ id: doc.id, ...doc.data() });
-        });
+            if (!storiesSnapshot.empty) {
+                const storiesData = storiesSnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
 
-        setData((prevData) => [...prevData, ...storiesData]);
-        setLastDoc(storiesSnapshot.docs[storiesSnapshot.docs.length - 1]);
+                setData((prevData) => [...prevData, ...storiesData]);
+                setLastDoc(storiesSnapshot.docs[storiesSnapshot.docs.length - 1]);
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        } finally {
+            setLoading(false);
+        }
     };
+
 
     const handleListBtn = (buttonId) => {
         setActiveButton(buttonId);
@@ -64,87 +80,89 @@ const HomeScreen = () => {
     const handleCardPress = (item) => {
         navigation.navigate('StoryViewScreen', { itemData: item });
     };
+    const handleScroll = (event) => {
+        const offsetY = event.nativeEvent.contentOffset.y;
+        const contentHeight = event.nativeEvent.contentSize.height;
+        const containerHeight = event.nativeEvent.layoutMeasurement.height;
+
+        if (offsetY + containerHeight >= contentHeight - 20 && lastDoc) {
+            // Manually trigger fetching more data when near the end
+            storyFetchData(lastDoc);
+        }
+    };
 
     return (
         <SafeAreaView>
-            <View style={styles.container}>
+            <ScrollView onScroll={handleScroll} scrollEventThrottle={16}>
                 {/* Top logo */}
                 <View style={styles.topLogo}>
                     <FastImage source={logo} resizeMode={FastImage.resizeMode.contain} style={{ width: 150, height: 20 }} />
                 </View>
                 {/* Top Featured Cards */}
-                <ScrollView horizontal={true}>
-                    <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 20 }}>
-                        <Pressable>
-                            <View style={styles.cards}></View>
+                <FlatList
+                    horizontal
+                    data={data}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <Pressable style={styles.topCards} onPress={() => handleCardPress(item)}>
+
                         </Pressable>
-                        <Pressable>
-                            <View style={styles.cards}></View>
-                        </Pressable>
-                    </View>
-                </ScrollView>
+                    )}
+                    style={{ marginLeft: 10 }}
+                />
 
                 {/* Middle sections */}
-                <View>
-                    {/* filter buttons */}
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', paddingVertical: 10 }}>
-                        <Pressable onPress={() => handleListBtn('recent')} style={activeButton === 'recent' ? styles.listBtnFocused : styles.listBtnUnfocused}>
-                            <Text style={{ textAlign: 'center', color: activeButton === 'recent' ? '#ffffff' : '#F94A29' }}>Recent</Text>
-                        </Pressable>
-                        <Pressable onPress={() => handleListBtn('popular')} style={activeButton === 'popular' ? styles.listBtnFocused : styles.listBtnUnfocused}>
-                            <Text style={{ textAlign: 'center', color: activeButton === 'popular' ? '#ffffff' : '#F94A29' }}>Popular</Text>
-                        </Pressable>
-                        <Pressable onPress={() => handleListBtn('trending')} style={activeButton === 'trending' ? styles.listBtnFocused : styles.listBtnUnfocused}>
-                            <Text style={{ textAlign: 'center', color: activeButton === 'trending' ? '#ffffff' : '#F94A29' }}>Trending</Text>
-                        </Pressable>
-                    </View>
-
-                    {/* flatcards */}
-                    <View style={{ alignSelf: 'center' }}>
-                        <FlatList
-                            data={data}
-                            keyExtractor={(item) => item.id.toString()}
-                            renderItem={({ item }) => (
-                                <Pressable style={styles.miniCards} onPress={() => handleCardPress(item)}>
-                                    <FastImage source={cycle} resizeMode={FastImage.resizeMode.contain} style={{ width: 120, height: 120, backgroundColor: '#D9D9D9', borderRadius: 15 }} />
-                                    <View style={{ flex: 1, justifyContent: 'center', }}>
-                                        <Text style={styles.cardTitle}>{item.title}</Text>
-                                        <Text style={styles.genre}>Genre | Type</Text>
-                                        <Text style={styles.cardDescription} numberOfLines={2}>{item.description}</Text>
-                                        <View style={{ width: 40, flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', borderRadius: 5, borderColor: '#555555', borderWidth: 1 }}>
-                                            <Text style={{ color: '#555555' }}>{5}</Text>
-                                            <FontAwesome name="heart" size={15} color="red" />
-                                        </View>
-                                    </View>
-                                </Pressable>
-                            )}
-                            style={{ flexGrow: 0 }}
-                            onEndReached={() => {
-                                if (lastDoc) {
-                                    storyfetchdata(lastDoc);
-                                }
-                            }}
-                            onEndReachedThreshold={0.1}
-                        />
-                    </View>
+                {/* filter buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', paddingVertical: 10 }}>
+                    <Pressable onPress={() => handleListBtn('recent')} style={activeButton === 'recent' ? styles.listBtnFocused : styles.listBtnUnfocused}>
+                        <Text style={{ textAlign: 'center', color: activeButton === 'recent' ? '#ffffff' : '#F94A29' }}>Recent</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleListBtn('popular')} style={activeButton === 'popular' ? styles.listBtnFocused : styles.listBtnUnfocused}>
+                        <Text style={{ textAlign: 'center', color: activeButton === 'popular' ? '#ffffff' : '#F94A29' }}>Popular</Text>
+                    </Pressable>
+                    <Pressable onPress={() => handleListBtn('trending')} style={activeButton === 'trending' ? styles.listBtnFocused : styles.listBtnUnfocused}>
+                        <Text style={{ textAlign: 'center', color: activeButton === 'trending' ? '#ffffff' : '#F94A29' }}>Trending</Text>
+                    </Pressable>
                 </View>
-            </View>
+
+                {/* flatcards */}
+                <FlatList
+                    scrollEnabled={false}
+                    data={data}
+                    keyExtractor={(item) => item.id.toString()}
+                    renderItem={({ item }) => (
+                        <Pressable style={styles.miniCards} onPress={() => handleCardPress(item)}>
+                            <FastImage source={{ uri: item?.coverImage[0]?.uri }} resizeMode={FastImage.resizeMode.contain} style={{ width: 120, height: 120, backgroundColor: '#D9D9D9', borderRadius: 15 }} />
+                            <View style={{ flex: 1, justifyContent: 'center', }}>
+                                <Text style={styles.cardTitle}>{item.title}</Text>
+                                <Text style={styles.genre}>Genre | Type</Text>
+                                <Text style={styles.cardDescription} numberOfLines={2}>{item.description}</Text>
+                                <View style={{ width: 40, flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'center', borderRadius: 5, borderColor: '#555555', borderWidth: 1 }}>
+                                    <Text style={{ color: '#555555' }}>{5}</Text>
+                                    <FontAwesome name="heart" size={15} color="red" />
+                                </View>
+                            </View>
+                        </Pressable>
+                    )}
+                    style={{ flexGrow: 0, alignSelf: 'center' }}
+                />
+                {loading && <ActivityIndicator size="large" color="#00ff00" />}
+            </ScrollView>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-    },
     topLogo: {
         padding: 20,
         alignSelf: 'center'
     },
-    cards: {
+    topCards: {
         width: 330,
         height: 250,
         backgroundColor: '#D9D9D9',
         borderRadius: 24,
+        marginRight: 10,
     },
     cardTitle: {
         fontFamily: 'Poppins-Bold',
@@ -162,8 +180,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        width: 320,
+        width: 350,
         height: 150,
+        marginBottom: 10
     },
     genre: {
         fontFamily: 'Poppins-Regular'

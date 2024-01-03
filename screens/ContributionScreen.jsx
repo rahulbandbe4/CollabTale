@@ -47,7 +47,7 @@ const ContributionScreen = () => {
       setstoryTitle('');
       setstoryDescription('');
       setPickedDocument('');
-      navigation.navigate("HomeScreen");
+      navigation.navigate("Home");
     })
   };
   return (

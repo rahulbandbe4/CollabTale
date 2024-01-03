@@ -44,14 +44,14 @@ const StoryViewScreen = ({ route }) => {
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const handleContribution = async () => {
         //take reference to the individual user document
-        const docref = doc(firestoreDB, 'published-stories', originalContent.id); 
-        const subCollection = collection(docref, "contributed-stories");    
+        const docref = doc(firestoreDB, 'published-stories', originalContent.id);
+        const subCollection = collection(docref, "contributed-stories");
         //contributed data to be uploaded as a new story or newer version
-        const contributedData = {       
+        const contributedData = {
             userID: user._id,
             userName: user.fullName,
             title: originalContent.title,
-            content: modifiedContent.content,
+            content: modifiedContent,
             isApproved: false,
         }
         //adding the contributed document in the specified story
@@ -110,6 +110,7 @@ const StoryViewScreen = ({ route }) => {
                                         ref={richText}
                                         onChange={descriptionText => {
                                             setModifiedContent(descriptionText);
+                                            console.log(descriptionText);
                                         }}
                                     />
                                 </View>
