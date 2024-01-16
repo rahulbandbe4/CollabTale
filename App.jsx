@@ -25,9 +25,6 @@ const MyTab = () => {
         else if (route.name === 'Contribution') {
           iconName = focused ? 'add-circle' : 'add-circle-outline';
         }
-        else if (route.name == 'Notification') {
-          iconName = focused ? 'notifications' : 'notifications-outline';
-        }
         else if (route.name === 'Profile') {
           iconName = focused ? 'person' : 'person-outline';
         }
@@ -41,7 +38,6 @@ const MyTab = () => {
     })}>
       <Tab.Screen name='Home' component={HomeScreen} />
       <Tab.Screen name='Contribution' component={ContributionScreen} />
-      <Tab.Screen name='Notification' component={NotificationScreen} />
       <Tab.Screen name='Profile' component={ProfileScreen} />
     </Tab.Navigator >
   );
