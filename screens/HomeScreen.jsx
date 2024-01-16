@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions, ActivityIndicator, Button } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { cycle, logo } from '../assets'
+import { logo } from '../assets'
 import { useNavigation } from '@react-navigation/native'
 import FastImage from 'react-native-fast-image'
 import { SafeAreaView } from 'react-native-safe-area-context'
@@ -105,7 +105,11 @@ const HomeScreen = () => {
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <Pressable style={styles.topCards} onPress={() => handleCardPress(item)}>
-
+                            <FastImage source={{ uri: item?.coverImage[0]?.uri }} resizeMode={FastImage.resizeMode.cover} style={{ height: 250, borderRadius: 24 }} />
+                            <View style={{ position: 'absolute', top: '40%', left: 20 }}>
+                                <Text style={{ fontSize: 34, fontFamily: 'Poppins-Bold', }}>{item.title}</Text>
+                                <Text style={{ fontSize: 12, fontFamily: 'Poppins-Regular', }}>{item.description}</Text>
+                            </View>
                         </Pressable>
                     )}
                     style={{ marginLeft: 10 }}
@@ -132,7 +136,7 @@ const HomeScreen = () => {
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <Pressable style={styles.miniCards} onPress={() => handleCardPress(item)}>
-                            <FastImage source={{ uri: item?.coverImage[0]?.uri }} resizeMode={FastImage.resizeMode.contain} style={{ width: 120, height: 120, backgroundColor: '#D9D9D9', borderRadius: 15 }} />
+                            <FastImage source={{ uri: item?.coverImage[0]?.uri }} resizeMode={FastImage.resizeMode.cover} style={{ width: 120, height: 120, backgroundColor: '#D9D9D9', borderRadius: 15 }} />
                             <View style={{ flex: 1, justifyContent: 'center', }}>
                                 <Text style={styles.cardTitle}>{item.title}</Text>
                                 <Text style={styles.genre}>Genre | Type</Text>
@@ -154,8 +158,8 @@ const HomeScreen = () => {
 
 const styles = StyleSheet.create({
     topLogo: {
-        padding: 20,
-        alignSelf: 'center'
+        marginVertical: 12,
+        alignSelf: 'center',
     },
     topCards: {
         width: 330,
