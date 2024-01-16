@@ -25,10 +25,10 @@ const WelcomeScreen = () => {
       </View>
       {/* Bottom Buttons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={styles.buttons} onPress={() => { navigation.navigate('LoginScreen') }}>
+        <TouchableOpacity style={styles.buttons} onPress={() => { navigation.replace('LoginScreen') }}>
           <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff', textAlign: 'center' }}>Get Started</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.buttons} onPress={() => { navigation.navigate('RegisterScreen') }}>
+        <TouchableOpacity style={styles.buttons} onPress={() => { navigation.replace('RegisterScreen') }}>
           <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#ffffff', textAlign: 'center' }}>Don't have an account? Sign up here</Text>
         </TouchableOpacity>
       </View>
