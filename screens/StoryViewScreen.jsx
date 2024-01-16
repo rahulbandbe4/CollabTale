@@ -1,11 +1,9 @@
-import { View, Text, Dimensions, ScrollView, StyleSheet, TouchableOpacity, Switch, KeyboardAvoidingView, SafeAreaView, Platform, Button, FlatList } from 'react-native';
+import { View, Text, Dimensions, ScrollView, StyleSheet, TouchableOpacity, Switch, KeyboardAvoidingView, SafeAreaView, Platform, Button, FlatList, Modal } from 'react-native';
 import React, { useEffect, useRef, useState } from 'react';
-import RenderHTML from 'react-native-render-html';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
-import { combineReducers } from '@reduxjs/toolkit';
-import { addDoc, collection, doc, getDoc, getDocs } from 'firebase/firestore';
+import { addDoc, collection, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { firestoreDB } from '../config/firebase.config';
 import { useSelector } from 'react-redux';
 import { HTMLRenderer } from '../components';
@@ -22,9 +20,9 @@ const StoryViewScreen = ({ route }) => {
     const [isEnabled, setIsEnabled] = useState(false);
     const originalContent = route.params.itemData;
     const [modifiedContent, setModifiedContent] = useState(route.params.itemData);
-    const [versionedStories, setVersionedStories] = useState('');
-    const [currentPageIndex, setCurrentPageIndex] = useState(0);
-
+    const [versionContent, setVersionContent] = useState(route.params.itemData);
+    const [versionedStories, setVersionedStories] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
 
     useEffect(() => {
         const storiesVersion = async () => {
@@ -39,12 +37,11 @@ const StoryViewScreen = ({ route }) => {
 
         storiesVersion();
     }, [])
-
     // user defined functions
     const toggleSwitch = () => setIsEnabled(previousState => !previousState);
     const handleContribution = async () => {
         //take reference to the individual user document
-        const docref = doc(firestoreDB, 'published-stories', originalContent.id);
+        const docref = doc(firestoreDB, "published-stories", originalContent.id);
         const subCollection = collection(docref, "contributed-stories");
         //contributed data to be uploaded as a new story or newer version
         const contributedData = {
@@ -52,13 +49,15 @@ const StoryViewScreen = ({ route }) => {
             userName: user.fullName,
             title: originalContent.title,
             content: modifiedContent,
-            isApproved: false,
         }
         //adding the contributed document in the specified story
         await addDoc(subCollection, contributedData);
         navigation.navigate('HomeScreen');
     }
-
+    const handleVersionDisplay = (item) => {
+        setVersionContent(item)
+        setModalVisible(false)
+    }
     const handleScroll = (event) => {
         const { contentOffset } = event.nativeEvent;
         const pageIndex = Math.floor(contentOffset.x / Dimensions.get('window').width);
@@ -67,26 +66,42 @@ const StoryViewScreen = ({ route }) => {
 
     // others
     const source = {
-        html: originalContent.content
-    }
-    const tagStyles = {
-        body: {
-            color: 'black',
-            fontSize: 16,
-        },
-        addedParagraph: {
-            backgroundColor: 'yellow',
-            display: 'block',
-        },
+        html: versionContent.content
     }
     return (
         <SafeAreaView style={{ flex: 1 }}>
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    Alert.alert('Modal has been closed.');
+                    setModalVisible(!modalVisible);
+                }}>
+                <View style={styles.centeredView}>
+                    <View style={styles.modalView}>
+                        <ScrollView>
+                            <TouchableOpacity style={{ borderBottomColor: '#88888888', borderBottomWidth: 1 }} onPress={() => { setVersionContent(originalContent); setModalVisible(false) }}>
+                                <Text style={{ color: 'black', textAlign: 'center', paddingVertical: 8 }}>Original</Text>
+                            </TouchableOpacity>
+                            {versionedStories.map((item) => (
+                                <TouchableOpacity style={{ borderBottomColor: '#88888888', borderBottomWidth: 1 }} key={item.id.toString()} onPress={() => handleVersionDisplay(item)}>
+                                    <Text style={{ color: 'black', textAlign: 'center', paddingVertical: 8 }}>{item.userName}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                        <Button title='close' onPress={() => setModalVisible(false)} />
+                    </View>
+                </View>
+            </Modal>
             <View style={styles.top}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Icon name="chevron-circle-left" size={30} color={'black'} />
                 </TouchableOpacity>
-                {isEnabled &&
+                {isEnabled ?
                     <Button title='Contribute' onPress={() => handleContribution()} />
+                    :
+                    <Button title='Versions' onPress={() => setModalVisible(true)} />
                 }
                 <Switch
                     trackColor={{ false: '#767577', true: '#81b0ff' }}
@@ -128,15 +143,7 @@ const StoryViewScreen = ({ route }) => {
                     :
                     <>
                         {/* Read Mode */}
-                        <ScrollView pagingEnabled onScroll={handleScroll}>
-                            {/*<View style={styles.page}>
-                                        <RenderHTML
-                                            contentWidth={Dimensions.get('window').width}
-                                            source={source}
-                                            tagsStyles={tagStyles}
-                                        />
-                                    </View>*/}
-                            {/* <HTMLRenderer content={source.html} /> */}
+                        <ScrollView onScroll={handleScroll}>
                             <HTMLRenderer content={source.html} />
                         </ScrollView>
                     </>
@@ -155,18 +162,31 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between'
     },
-    page: {
-        marginBottom: 10,
-        marginHorizontal: 10,
-        paddingHorizontal: 15,
-        paddingVertical: 5,
-        backgroundColor: '#f9e3bf',
-        borderRadius: 20,
-    },
     toolbarContainer: {
         bottom: 0,
         left: 0,
         right: 0,
+    },
+    centeredView: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalView: {
+        width: 200,
+        maxHeight: 250,
+        marginTop: 50,
+        gap: 8,
+        backgroundColor: 'white',
+        borderRadius: 10,
+        padding: 10,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
     },
 });
 
