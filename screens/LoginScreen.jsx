@@ -22,7 +22,7 @@ const LoginScreen = () => {
           (docSnap) => {
             if (docSnap.exists()) {
               dispatch(setUser(docSnap.data()));
-              navigation.navigate("HomeScreen");
+              navigation.replace("HomeScreen");
             }
           }
         )
