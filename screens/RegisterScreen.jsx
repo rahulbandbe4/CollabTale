@@ -35,7 +35,7 @@ const RegisterScreen = () => {
                 }
 
                 setDoc(doc(firestoreDB, 'users', userCred?.user.uid), data).then(() => {
-                    navigation.navigate("LoginScreen");
+                    navigation.replace("LoginScreen");
                 })
             })
         }
