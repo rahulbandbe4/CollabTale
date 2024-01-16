@@ -4,7 +4,7 @@ import { Text, Platform, KeyboardAvoidingView, SafeAreaView, ScrollView, StyleSh
 import { actions, RichEditor, RichToolbar } from "react-native-pell-rich-editor";
 import { useSelector } from "react-redux";
 import { firestoreDB } from "../config/firebase.config";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
 import DocumentPicker from 'react-native-document-picker';
 
 const handleHead = ({ tintColor }) => <Text style={{ color: tintColor }}>H1</Text>;
@@ -31,24 +31,30 @@ const ContributionScreen = () => {
     userName: user.fullName,
     userID: user._id,
   };
-
   //User defined functions
-
   const pickDocument = async () => {
     const result = await DocumentPicker.pick({
-      type: [DocumentPicker.types.allFiles],
+      type: [DocumentPicker.types.images],
     });
     setPickedDocument(result);
   }
 
   const handleStoryPublish = async () => {
-    await addDoc(collection(firestoreDB, "published-stories"), storyObject).then(() => {
-      setStoryText('');
-      setstoryTitle('');
-      setstoryDescription('');
-      setPickedDocument('');
-      navigation.navigate("Home");
-    })
+    try {
+      // Add the document to "published-stories" collection
+      await addDoc(collection(firestoreDB, "published-stories"), storyObject).then(() => {
+        Alert.alert("Story Published Successfull");
+        setStoryText('');
+        setstoryTitle('');
+        setstoryDescription('');
+        setPickedDocument('');
+        richText.current?.setContentHTML('');
+      })
+
+    } catch (error) {
+      console.error("Error publishing story:", error);
+      Alert.alert("Error", "Failed to publish story. Please try again.");
+    }
   };
   return (
     <SafeAreaView style={{ flex: 1 }}>
