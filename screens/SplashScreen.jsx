@@ -12,30 +12,26 @@ const SplashScreen = () => {
     const dispatch = useDispatch();
 
     useEffect(() => {
-        const checkLoggedInUser = async () => {
-            firebaseAuth.onAuthStateChanged(async (userCred) => {
-                try {
-                    if (userCred?.uid) {
-                        const docSnap = await getDoc(doc(firestoreDB, "users", userCred.uid));
-                        if (docSnap.exists()) {
-                            dispatch(setUser(docSnap.data()));
-                        }
-                        setTimeout(() => {
-                            navigation.replace("HomeScreen");
-                        }, 2000);
-                    } else {
-                        setTimeout(() => {
-                            navigation.replace("WelcomeScreen");
-                        }, 2000);
+        const unsubscribe = firebaseAuth.onAuthStateChanged(async (userCred) => {
+            try {
+                if (userCred?.uid) {
+                    const docSnap = await getDoc(doc(firestoreDB, "users", userCred.uid));
+                    if (docSnap.exists()) {
+                        dispatch(setUser(docSnap.data()));
                     }
-                } catch (error) {
-                    console.error('Error in checkLoggedInUser:', error);
+                    navigation.replace("HomeScreen");
+                } else {
+                    navigation.replace("WelcomeScreen");
                 }
-            });
-        }
+            } catch (error) {
+                console.error('Error in checkLoggedInUser:', error);
+            }
+        });
 
-        checkLoggedInUser();
-    }, [dispatch, navigation]);
+        // Cleanup function to unsubscribe the listener when the component unmounts
+        return () => unsubscribe();
+    }, []);
+
 
     return (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 10 }}>
